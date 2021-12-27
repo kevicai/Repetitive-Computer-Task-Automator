@@ -5,13 +5,13 @@ import pyperclip
 
 
 def mouse_click(click_times: int, l_or_right: str, img: str, num_of_repeats: int) -> None:
-    ## if command is to repeat forever
+    # if command is to repeat forever
     if num_of_repeats == -1:
         while True:
             location = pyautogui.locateCenterOnScreen(img)
             if location is not None:
-                pyautogui.click(location.x, location.y, clicks=clickTimes, interval=0.2,
-                                duration=0.2, button=lOrR)
+                pyautogui.click(location.x, location.y, clicks=click_times, interval=0.2,
+                                duration=0.2, button=l_or_right)
             time.sleep(0.1)
     elif num_of_repeats >= 1:
         for _ in range(num_of_repeats):
@@ -24,70 +24,66 @@ def mouse_click(click_times: int, l_or_right: str, img: str, num_of_repeats: int
                     print("Couldn't find image, rescanning")
                     time.sleep(0.1)
 
-            pyautogui.click(location.x, location.y, clicks=clickTimes, interval=0.2,
-                                duration=0.2, button=lOrR)
+            pyautogui.click(location.x, location.y, clicks=click_times, interval=0.2,
+                            duration=0.2, button=l_or_right)
             time.sleep(0.1)
 
 
-
-def read_tasks(img: str) -> None:
+def read_tasks(commands) -> None:
     row = 1
-    while row < sheet1.nrows:
-        # 取本行指令的操作类型
-        command = sheet1.row(row)[0]
+    while row < commands.nrows:
+        # get commands from the xlsx file
+        command = commands.row(row)[0]
+        # 1 is single left click
         if command.value == 1.0:
-            # 取图片名称
-            img = sheet1.row(row)[1].value
+            # get image name
+            img = commands.row(row)[1].value
+            # TODO check if image is valid
             num_of_repeats = 1
-            if sheet1.row(row)[2].ctype == 2 and sheet1.row(row)[2].value != 0:
-                num_of_repeats = sheet1.row(row)[2].value
+            if commands.row(row)[2].ctype == 2 and commands.row(row)[2].value != 0:
+                num_of_repeats = commands.row(row)[2].value
             mouse_click(1, "left", img, num_of_repeats)
-            print("单击左键", img)
-        # 2代表双击左键
+            print("left clicked ", img)
+        # 2 is double left click
         elif command.value == 2.0:
-            # 取图片名称
-            img = sheet1.row(row)[1].value
-            # 取重试次数
+            img = commands.row(row)[1].value
             num_of_repeats = 1
-            if sheet1.row(row)[2].ctype == 2 and sheet1.row(row)[2].value != 0:
-                num_of_repeats = sheet1.row(row)[2].value
+            if commands.row(row)[2].ctype == 2 and commands.row(row)[2].value != 0:
+                num_of_repeats = commands.row(row)[2].value
             mouse_click(2, "left", img, num_of_repeats)
-            print("双击左键", img)
-        # 3代表右键
+            print("double left clicked ", img)
+        # 3 is right click
         elif command.value == 3.0:
-            # 取图片名称
-            img = sheet1.row(row)[1].value
-            # 取重试次数
+            img = commands.row(row)[1].value
             num_of_repeats = 1
-            if sheet1.row(row)[2].ctype == 2 and sheet1.row(row)[2].value != 0:
-                num_of_repeats = sheet1.row(row)[2].value
+            if commands.row(row)[2].ctype == 2 and commands.row(row)[2].value != 0:
+                num_of_repeats = commands.row(row)[2].value
             mouse_click(1, "right", img, num_of_repeats)
-            print("右键", img)
-            # 4代表输入
+            print("right clicked ", img)
+            # 4 is type words
         elif command.value == 4.0:
-            input_value = sheet1.row(row)[1].value
+            input_value = commands.row(row)[1].value
+            # copy and paste the input values
             pyperclip.copy(input_value)
             pyautogui.hotkey('ctrl', 'v')
             time.sleep(0.5)
-            print("输入:", input_value)
-            # 5代表等待
+            print("inputted: ", input_value)
+            # 5 is to wait
         elif command.value == 5.0:
-            # 取图片名称
-            wait_time = sheet1.row(row)[1].value
+            wait_time = commands.row(row)[1].value
             time.sleep(wait_time)
-            print("等待", wait_time, "秒")
-        # 6代表滚轮
+            print("waited ", wait_time, "s")
+        # 6 is to scroll
         elif command.value == 6.0:
-            # 取图片名称
-            scroll = sheet1.row(row)[1].value
+            scroll = commands.row(row)[1].value
             pyautogui.scroll(int(scroll))
-            print("滚轮滑动", int(scroll), "距离")
+            print("scrolled ", int(scroll))
         row += 1
 
 
 if __name__ == '__main__':
     # Open xls file
-    file = 'cmd.xls'
+    file = 'cmd.xlsx'
     workbook = xlrd.open_workbook(filename=file)
 
     # Search for the workbook
@@ -99,7 +95,6 @@ if __name__ == '__main__':
     print("Welcome to using 'Simple Computer Task Automation'")
     key = input("Please enter an option: 1. Do task once 2. Do task 'n' times \n")
     if key == '1':
-        # 循环拿出每一行指令
         read_tasks(sheet)
     elif key == '2':
         num_of_times = int(input("Please enter how many times"))
